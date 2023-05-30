@@ -12,10 +12,12 @@ const snackbar = ref({
   text: "",
 });
 const user = ref({
-  firstName: "",
-  lastName: "",
-  email: "",
-  password: "",
+  firstName: undefined,
+  lastName: undefined,
+  email: undefined,
+  password: undefined,
+  address: undefined,
+  phoneNumber: undefined,
 });
 
 onMounted(async () => {
@@ -129,6 +131,16 @@ function closeSnackBar() {
             <v-text-field
               v-model="user.lastName"
               label="Last Name"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="user.address"
+              label="Address"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="user.phoneNumber"
+              label="Phone Number"
               required
             ></v-text-field>
 

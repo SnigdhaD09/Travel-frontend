@@ -14,13 +14,8 @@ const router = createRouter({
       component: () => import("./views/HomePage.vue"),
     },
     {
-      path: "/recipes",
-      name: "recipes",
-      component: () => import("./views/RecipeList.vue"),
-    },
-    {
-      path: "/recipe/:id",
-      name: "editRecipe",
+      path: "/trip/:id",
+      name: "editTrip",
       props: true,
       component: () => import("./views/EditRecipe.vue"),
     },

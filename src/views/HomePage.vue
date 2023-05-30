@@ -2,35 +2,38 @@
 import { onMounted } from "vue";
 import { ref } from "vue";
 import RecipeCard from "../components/RecipeCardComponent.vue";
-import RecipeServices from "../services/RecipeServices.js";
+import TripServices from "../services/TripServices.js";
 
-const recipes = ref([]);
+const trips = ref([]);
 const isAdd = ref(false);
 const user = ref(null);
+var isAdmin = ref(false);
 const snackbar = ref({
   value: false,
   color: "",
   text: "",
 });
-const newRecipe = ref({
-  name: "",
-  description: "",
-  servings: 0,
-  time: "30",
-  isPublished: false,
+const newTrip = ref({
+  tripTitle: undefined,
+  startdate: undefined,
+  enddate: undefined,
+  tripDescription: undefined,
+  tripDestination: undefined,
+  isArchived: false,
 });
 
 onMounted(async () => {
-  await getRecipes();
+  await getTrips();
   user.value = JSON.parse(localStorage.getItem("user"));
+  isAdmin.value = user.value.isAdmin;
 });
 
-async function getRecipes() {
+async function getTrips() {
   user.value = JSON.parse(localStorage.getItem("user"));
-  if (user.value !== null && user.value.id !== null) {
-    await RecipeServices.getRecipesByUserId(user.value.id)
+  if (user.value !== null && user.value.id !== null && user.value.isAdmin !== false) {
+    await TripServices.getRegisteredTripsByUserId(user.value.id)
       .then((response) => {
-        recipes.value = response.data;
+        trips.value = response.data;
       })
       .catch((error) => {
         console.log(error);
@@ -39,9 +42,9 @@ async function getRecipes() {
         snackbar.value.text = error.response.data.message;
       });
   } else {
-    await RecipeServices.getRecipes()
+    await TripServices.getTrips()
       .then((response) => {
-        recipes.value = response.data;
+        trips.value = response.data;
       })
       .catch((error) => {
         console.log(error);
@@ -52,14 +55,13 @@ async function getRecipes() {
   }
 }
 
-async function addRecipe() {
+async function addTrip() {
   isAdd.value = false;
-  newRecipe.value.userId = user.value.id;
-  await RecipeServices.addRecipe(newRecipe.value)
+  await TripServices.addTrip(newTrip.value)
     .then(() => {
       snackbar.value.value = true;
       snackbar.value.color = "green";
-      snackbar.value.text = `${newRecipe.value.name} added successfully!`;
+      snackbar.value.text = `${newTrip.value.tripTitle} added successfully!`;
     })
     .catch((error) => {
       console.log(error);
@@ -67,7 +69,7 @@ async function addRecipe() {
       snackbar.value.color = "error";
       snackbar.value.text = error.response.data.message;
     });
-  await getRecipes();
+  await getTrips();
 }
 
 function openAdd() {
@@ -93,16 +95,16 @@ function closeSnackBar() {
           </v-card-title>
         </v-col>
         <v-col class="d-flex justify-end" cols="2">
-          <v-btn v-if="user !== null" color="accent" @click="openAdd()"
+          <v-btn v-if="isAdmin" color="accent" @click="openAdd()"
             >Add</v-btn
           >
         </v-col>
       </v-row>
 
       <RecipeCard
-        v-for="recipe in recipes"
-        :key="recipe.id"
-        :recipe="recipe"
+        v-for="trip in trips"
+        :key="trip.id"
+        :trip="trip"
         @deletedList="getLists()"
       />
 
@@ -111,31 +113,39 @@ function closeSnackBar() {
           <v-card-title class="headline mb-2">Add Trip </v-card-title>
           <v-card-text>
             <v-text-field
-              v-model="newRecipe.name"
-              label="Name"
+              v-model="newTrip.tripTitle"
+              label="Title"
               required
             ></v-text-field>
 
             <v-text-field
-              v-model.number="newRecipe.servings"
-              label="Number of Servings"
-              type="number"
+              v-model.date="newTrip.startdate"
+              label="Start Date"
+              type="date"
+              required
             ></v-text-field>
             <v-text-field
-              v-model.number="newRecipe.time"
-              label="Time to Make (in minutes)"
-              type="number"
+              v-model.date="newTrip.enddate"
+              label="End Date"
+              type="date"
+              required
             ></v-text-field>
 
             <v-textarea
-              v-model="newRecipe.description"
+              v-model="newTrip.tripDescription"
               label="Description"
+              required
             ></v-textarea>
+            <v-text-field
+              v-model="newTrip.tripDestination"
+              label="Destination"
+              required
+            ></v-text-field>
             <v-switch
-              v-model="newRecipe.isPublished"
+              v-model="newTrip.isArchived"
               hide-details
               inset
-              :label="`Publish? ${newRecipe.isPublished ? 'Yes' : 'No'}`"
+              :label="`Archive? ${newTrip.isArchived ? 'Yes' : 'No'}`"
             ></v-switch>
           </v-card-text>
           <v-card-actions>
@@ -143,7 +153,7 @@ function closeSnackBar() {
             <v-btn variant="flat" color="secondary" @click="closeAdd()"
               >Close</v-btn
             >
-            <v-btn variant="flat" color="primary" @click="addRecipe()"
+            <v-btn variant="flat" color="primary" @click="addTrip()"
               >Add Trip</v-btn
             >
           </v-card-actions>
