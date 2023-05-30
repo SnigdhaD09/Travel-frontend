@@ -17,7 +17,7 @@ const router = createRouter({
       path: "/trip/:id",
       name: "editTrip",
       props: true,
-      component: () => import("./views/EditRecipe.vue"),
+      component: () => import("./views/EditTrip.vue"),
     },
     {
       path: "/ingredients",

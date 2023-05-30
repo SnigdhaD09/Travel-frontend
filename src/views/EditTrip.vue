@@ -169,6 +169,9 @@ function openAdd() {
 
 function closeAdd() {
   isAdd.value = false;
+  if(updateTrip){
+    router.push({ name: "homepage" });
+  }
 }
 
 function openAddHotel() {
