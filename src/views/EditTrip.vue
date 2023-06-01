@@ -482,6 +482,36 @@ function formatDate (date) {
             ? "Edit Day"
             : ""
         }}</v-card-title>
+        <v-card-text>
+          <v-row>
+            <v-col cols="3">
+              <v-text-field
+                v-model="newDay.tripDate"
+                label="Day Date"
+                type="date"
+                required
+              >
+              </v-text-field>
+            </v-col>
+            <v-col>
+              <v-select
+                v-model="selectedHotel"
+                :items="hotels"
+                item-title="hotelName"
+                item-value="id"
+                label="Hotel"
+                return-object
+                required
+              >
+                <template slot="item" slot-scope="data">
+                  <v-list-tile-content>
+                    <v-list-tile-title v-html="data.item.hotelName"></v-list-tile-title>
+                  </v-list-tile-content>
+                </template>
+              </v-select>
+            </v-col>
+          </v-row>
+        </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
