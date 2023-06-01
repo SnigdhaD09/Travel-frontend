@@ -9,11 +9,22 @@ const router = useRouter();
 const user = ref(null);
 const title = ref("Trip System");
 const logoURL = ref("");
+const isCreateAccount = ref(false);
+const updateButtonText = ref("Update Account");
+var errorText = '';
 
 onMounted(() => {
   logoURL.value = ocLogo;
   user.value = JSON.parse(localStorage.getItem("user"));
+  console.log(user);
 });
+
+function openUpdateAccount(){
+  isCreateAccount.value = true;
+}
+function closeUpdateAccount(){
+  isCreateAccount.value = false;
+}
 
 function logout() {
   UserServices.logoutUser()
@@ -27,6 +38,23 @@ function logout() {
   user.value = null;
   router.push({ name: "login" });
 }
+
+async function updateAccount() {
+  await UserServices.updateUser(user.value.id, user.value)
+    .then(() => {
+      updateButtonText.value = "Account updated successfully! Closing Dialog in 6s...";
+      setTimeout(() => {
+        closeUpdateAccount();
+        updateButtonText.value = "Update Account";
+      }, "6000");      
+      
+    })
+    .catch((error) => {
+      console.log(error);
+      errorText  = error.response.data.message;
+    });
+}
+
 </script>
 
 <template>
@@ -75,6 +103,8 @@ function logout() {
                 {{ user.email }}
               </p>
               <v-divider class="my-3"></v-divider>
+              <v-btn rounded variant="text" @click="openUpdateAccount()"> Update Account</v-btn>
+              <v-divider class="my-3"></v-divider>
               <v-btn rounded variant="text" @click="logout()"> Logout </v-btn>
             </div>
           </v-card-text>
@@ -82,4 +112,57 @@ function logout() {
       </v-menu>
     </v-app-bar>
   </div>
+  <v-dialog persistent v-model="isCreateAccount" width="800">
+        <v-card class="rounded-lg elevation-5">
+          <v-card-title class="headline mb-2">Update Account</v-card-title>
+          <v-card-text>
+            <v-span style="color: red;">{{ errorText }}</v-span>
+            <v-text-field
+              v-model="user.firstName"
+              label="First Name"
+              required
+            ></v-text-field>
+
+            <v-text-field
+              v-model="user.lastName"
+              label="Last Name"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="user.address"
+              label="Address"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="user.phoneNumber"
+              label="Phone Number"
+              required
+            ></v-text-field>
+
+            <v-text-field
+              v-model="user.email"
+              label="Email"
+              required
+            ></v-text-field>
+
+            <v-text-field
+              v-model="user.password"
+              label="Password"
+              required
+            ></v-text-field>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn
+              variant="flat"
+              color="secondary"
+              @click="closeUpdateAccount()"
+              >Close</v-btn
+            >
+            <v-btn variant="flat" color="primary" @click="updateAccount()"
+              >{{updateButtonText}}</v-btn
+            >
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
 </template>
