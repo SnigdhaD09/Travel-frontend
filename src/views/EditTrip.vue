@@ -4,14 +4,21 @@ import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import TripCard from "../components/TripCardComponent.vue";
 import TripServices from "../services/TripServices.js";
+import TripDayServices from "../services/TripDayServices.js";
 import HotelServices from "../services/HotelServices.js";
 
 const route = useRoute();
 const router = useRouter();
 const trips = ref([]);
+const tripDays = ref([]);
+
+const hotel = ref({});
+const selectedHotel = ref({});
 const hotels = ref([]);
 const isAdd = ref(false);
 const isUpdate = ref(false);
+const isAddDay = ref(false);
+const isEditDay = ref(false);
 const isAddHotel = ref(false);
 const isViewHotel = ref(false);
 const user = ref(null);
@@ -28,6 +35,11 @@ var newTrip = ref({
   tripDescription: undefined,
   tripDestination: undefined,
   isArchived: false,
+});
+var newDay = ref({
+  tripDate: undefined,
+  tripId: undefined,
+  hotelId: undefined,
 });
 const newHotel = ref({
   hotelName: undefined,
@@ -63,6 +75,7 @@ async function getTrip() {
     .catch((error) => {
       console.log(error);
     });
+    await getTripDays();
 }
 
 async function updateTrip() {
@@ -110,6 +123,102 @@ async function getTrips() {
   }
 }
 
+function openAddDay(){
+  newDay.value.id = undefined;
+  newDay.value.tripDate = undefined;
+  newDay.value.tripId = undefined;
+  newDay.value.hotelId = undefined;
+  selectedHotel.value = undefined;
+  isAddDay.value = true;
+}
+
+function openEditDay(day){
+  newDay.value.id = day.id;
+  newDay.value.tripDate = formatDate(day.tripDate);
+  newDay.value.tripId = day.tripId;
+  newDay.value.hotelId = day.hotelId;
+  selectedHotel.value = day.hotel;
+  isEditDay.value = true;
+}
+
+function closeAddDay() {
+  isAddDay.value = false;
+}
+
+function closeEditDay() {
+  isEditDay.value = false;
+}
+
+async function getTripDays() {
+  await TripDayServices.getTripDaysForTrip(route.params.id)
+    .then((response) => {
+      tripDays.value = response.data;
+      console.log(tripDays);
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+}
+
+async function addDay() {
+  isAddDay.value = false;
+  newDay.value.tripId = newTrip.value.id;
+  newDay.value.hotelId = selectedHotel.value.id;
+  delete newDay.value.id;
+  console.log(newDay);
+  await TripDayServices.addTripDay(newDay.value)
+    .then(() => {
+      snackbar.value.value = true;
+      snackbar.value.color = "green";
+      snackbar.value.text = `Day added successfully!`;
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+  await getTripDays();
+}
+
+async function updateDay() {
+  isEditDay.value = false;
+  newDay.value.tripId = newTrip.value.id;
+  newDay.value.hotelId = selectedHotel.value.id;
+  console.log(newDay);
+
+  await TripDayServices.updateTripDay(newDay.value)
+    .then(() => {
+      snackbar.value.value = true;
+      snackbar.value.color = "green";
+      snackbar.value.text = `${selectedHotel.value.name} updated successfully!`;
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+  await getTripDays();
+}
+
+async function deleteDay(day) {
+  await TripDayServices.deleteTripDay(day)
+    .then(() => {
+      console.log(day);
+      snackbar.value.value = true;
+      snackbar.value.color = "green";
+      snackbar.value.text = `${day.hotel.hotelName} deleted successfully!`;
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+  await getTripDays();
+}
+
 async function addTrip() {
   await TripServices.addTrip(newTrip.value)
     .then(() => {
@@ -130,6 +239,7 @@ async function getHotels() {
   await HotelServices.getHotels()
     .then((response) => {
       hotels.value = response.data;
+      console.log(hotels.value);
     })
     .catch((error) => {
       console.log(error);
@@ -277,6 +387,74 @@ function formatDate (date) {
               :label="`Archive? ${newTrip.isArchived ? 'Yes' : 'No'}`"
             ></v-switch>
           </v-card-text>
+          
+          <v-spacer></v-spacer>
+          <v-row>
+            <v-col>
+              <v-card class="rounded-lg elevation-5">
+                <v-card-title
+                  ><v-row align="center">
+                    <v-col cols="4"
+                      ><v-card-title class="headline">Days </v-card-title>
+                    </v-col>
+                    <v-col cols="4"
+                      ><v-card-title class="headline">Hotels </v-card-title>
+                    </v-col>
+                    <v-col class="d-flex justify-end" cols="4">
+                      <v-btn color="accent" @click="openAddDay()">Add Day</v-btn>
+                    </v-col>
+                  </v-row>
+                </v-card-title>
+                <v-card-text>
+                  <v-list>
+                    <v-list-item
+                      v-for="tripDay in tripDays"
+                      :key="tripDay.id"
+                    >
+                    <v-row>
+                      <v-col cols="4">
+                      <b>{{ formatDate(tripDay.tripDate) }}
+                        </b>
+                      </v-col>
+                      <v-col cols="4">
+                      <b>{{ tripDay.hotel.hotelName }}
+                        </b>
+                        </v-col>
+                        <v-col cols="4">
+                          </v-col>
+                        </v-row>
+
+                      <template v-slot:append>
+                        <v-row>
+                          <v-icon
+                            class="mx-2"
+                            size="x-small"
+                            icon="mdi-pencil"
+                            @click="openEditDay(tripDay)"
+                          ></v-icon>
+                          <v-icon
+                            class="mx-2"
+                            size="x-small"
+                            icon="mdi-trash-can"
+                            @click="deleteDay(tripDay)"
+                          ></v-icon>
+                        </v-row>
+                      </template>
+                    </v-list-item>
+                  </v-list>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+          <!-- <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn v-if="!isUpdateDay" variant="flat" color="primary" @click="addDay()"
+              >Add Day</v-btn
+            >
+            <v-btn v-if="isUpdateDay" variant="flat" color="primary" @click="updateDay()"
+              >Update Day</v-btn
+            >
+          </v-card-actions> -->
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn variant="flat" color="secondary" @click="closeAdd()"
@@ -291,6 +469,54 @@ function formatDate (date) {
           </v-card-actions>
         </v-card>
       </v-dialog>
+      <v-dialog
+      persistent
+      :model-value="isAddDay || isEditDay"
+      width="800"
+    >
+      <v-card class="rounded-lg elevation-5">
+        <v-card-title class="headline mb-2">{{
+          isAddDay
+            ? "Add Day"
+            : isEditDay
+            ? "Edit Day"
+            : ""
+        }}</v-card-title>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            variant="flat"
+            color="secondary"
+            @click="
+              isAddDay
+                ? closeAddDay()
+                : isEditDay
+                ? closeEditDay()
+                : false
+            "
+            >Close</v-btn
+          >
+          <v-btn
+            variant="flat"
+            color="primary"
+            @click="
+              isAddDay
+                ? addDay()
+                : isEditDay
+                ? updateDay()
+                : false
+            "
+            >{{
+              isAddDay
+                ? "Add Day"
+                : isEditDay
+                ? "Update Day"
+                : ""
+            }}</v-btn
+          >
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
 <!-- Add Hotels Dialog-->
       <v-dialog persistent v-model="isAddHotel" width="800">
@@ -305,7 +531,6 @@ function formatDate (date) {
             <v-textarea
               v-model="newHotel.address"
               label="Address"
-              type="date"
               required
             ></v-textarea>
             <v-text-field
@@ -313,7 +538,6 @@ function formatDate (date) {
               label="Website"
               required
             ></v-text-field>
-
             <v-text-field
               v-model="newHotel.hotelImage"
               label="Image Link"
