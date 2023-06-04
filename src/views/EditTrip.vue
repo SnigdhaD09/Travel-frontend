@@ -6,6 +6,8 @@ import TripCard from "../components/TripCardComponent.vue";
 import TripServices from "../services/TripServices.js";
 import TripDayServices from "../services/TripDayServices.js";
 import HotelServices from "../services/HotelServices.js";
+import SiteServices from "../services/SiteServices.js";
+import DaySiteServices from "../services/DaySiteServices.js";
 
 const route = useRoute();
 const router = useRouter();
@@ -14,10 +16,15 @@ const tripDays = ref([]);
 
 const hotel = ref({});
 const selectedHotel = ref({});
+const selectedDaySite = ref({});
+const selectedSite = ref({});
 const hotels = ref([]);
+const sites = ref([]);
+var daySites = ref([]);
 const isAdd = ref(false);
 const isUpdate = ref(false);
 const isAddDay = ref(false);
+const isEditDaySite = ref(false);
 const isEditDay = ref(false);
 const isAddHotel = ref(false);
 const isViewHotel = ref(false);
@@ -40,6 +47,10 @@ var newDay = ref({
   tripDate: undefined,
   tripId: undefined,
   hotelId: undefined,
+});
+var newDaySite = ref({
+  dayId: undefined,
+  siteId: undefined,
 });
 const newHotel = ref({
   hotelName: undefined,
@@ -124,6 +135,9 @@ async function getTrips() {
 }
 
 function openAddDay(){
+  daySites = ref([]);
+  getSites();
+  selectedSite.value = undefined;
   newDay.value.id = undefined;
   newDay.value.tripDate = undefined;
   newDay.value.tripId = undefined;
@@ -132,13 +146,61 @@ function openAddDay(){
   isAddDay.value = true;
 }
 
+function openEditDaySite(daySite){
+  selectedSite.value = daySite.site;
+  newDaySite.value.id = daySite.id;
+  newDaySite.value.dayId = daySite.dayId;
+  newDaySite.value.siteId = daySite.siteId;
+  isEditDaySite.value = true;
+}
+
+async function deleteDaySite(daySite) {
+  await DaySiteServices.deleteDaySite(daySite)
+    .then(() => {
+      snackbar.value.value = true;
+      snackbar.value.color = "green";
+      snackbar.value.text = `${daySite.site.siteName} deleted successfully!`;
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+  await getDaySites();
+}
+async function addDaySite() {
+  // isAddDaySite.value = false;
+  newDaySite.value.dayId = newDay.value.id;
+  newDaySite.value.siteId = selectedSite.value.id;
+  delete newDaySite.value.id;
+  await DaySiteServices.addDaySite(newDaySite.value)
+    .then(() => {
+      selectedSite.value = undefined; 
+      snackbar.value.value = true;
+      snackbar.value.color = "green";
+      snackbar.value.text = `Day Site added successfully!`;
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+  await getDaySites();
+}
+
 function openEditDay(day){
+  daySites = ref([]);
   newDay.value.id = day.id;
   newDay.value.tripDate = formatDate(day.tripDate);
   newDay.value.tripId = day.tripId;
   newDay.value.hotelId = day.hotelId;
   selectedHotel.value = day.hotel;
+  selectedSite.value = undefined;
   isEditDay.value = true;
+  getDaySites();
+  getSites();
 }
 
 function closeAddDay() {
@@ -148,24 +210,26 @@ function closeAddDay() {
 function closeEditDay() {
   isEditDay.value = false;
 }
+function closeEditDaySite() {
+  isEditDaySite.value = false;
+}
 
 async function getTripDays() {
   await TripDayServices.getTripDaysForTrip(route.params.id)
     .then((response) => {
       tripDays.value = response.data;
-      console.log(tripDays);
     })
     .catch((error) => {
       console.log(error);
     });
 }
 
+
 async function addDay() {
   isAddDay.value = false;
   newDay.value.tripId = newTrip.value.id;
   newDay.value.hotelId = selectedHotel.value.id;
   delete newDay.value.id;
-  console.log(newDay);
   await TripDayServices.addTripDay(newDay.value)
     .then(() => {
       snackbar.value.value = true;
@@ -185,13 +249,12 @@ async function updateDay() {
   isEditDay.value = false;
   newDay.value.tripId = newTrip.value.id;
   newDay.value.hotelId = selectedHotel.value.id;
-  console.log(newDay);
-
   await TripDayServices.updateTripDay(newDay.value)
     .then(() => {
+      console.log(selectedHotel);
       snackbar.value.value = true;
       snackbar.value.color = "green";
-      snackbar.value.text = `${selectedHotel.value.name} updated successfully!`;
+      snackbar.value.text = `Day updated successfully!`;
     })
     .catch((error) => {
       console.log(error);
@@ -201,11 +264,27 @@ async function updateDay() {
     });
   await getTripDays();
 }
+async function updateDaySite() {
+  newDaySite.value.siteId = selectedSite.value.id;
+  await DaySiteServices.updateDaySite(newDaySite.value)
+    .then(() => {
+      isEditDaySite.value = false;
+      snackbar.value.value = true;
+      snackbar.value.color = "green";
+      snackbar.value.text = `Day Site updated successfully!`;
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+  await getDaySites();
+}
 
 async function deleteDay(day) {
   await TripDayServices.deleteTripDay(day)
     .then(() => {
-      console.log(day);
       snackbar.value.value = true;
       snackbar.value.color = "green";
       snackbar.value.text = `${day.hotel.hotelName} deleted successfully!`;
@@ -239,7 +318,6 @@ async function getHotels() {
   await HotelServices.getHotels()
     .then((response) => {
       hotels.value = response.data;
-      console.log(hotels.value);
     })
     .catch((error) => {
       console.log(error);
@@ -248,14 +326,23 @@ async function getHotels() {
       snackbar.value.text = error.response.data.message;
     });
 }
-
-async function addHotel() {
-  await HotelServices.addHotel(newHotel.value)
-    .then(() => {
+async function getSites() {
+  await SiteServices.getSites()
+    .then((response) => {
+      sites.value = response.data;
+    })
+    .catch((error) => {
+      console.log(error);
       snackbar.value.value = true;
-      snackbar.value.color = "green";
-      snackbar.value.text = `${newHotel.value.hotelName} added successfully!`;
-      isAddHotel.value = false;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
+async function getDaySites() {
+  await DaySiteServices.getDaySitesForDay(newDay.value.id)
+    .then((response) => {
+      daySites.value = response.data;
+      console.log(daySites.value);
     })
     .catch((error) => {
       console.log(error);
@@ -511,7 +598,95 @@ function formatDate (date) {
               </v-select>
             </v-col>
           </v-row>
+          <v-row>
+            <v-col cols="8">
+              <v-select
+                v-model="selectedSite"
+                :items="sites"
+                item-title="siteName"
+                item-value="id"
+                label="Select Site"
+                return-object
+                required
+              >
+                <template slot="item" slot-scope="data">
+                  <v-list-tile-content>
+                    <v-list-tile-title v-html="data.item.siteName"></v-list-tile-title>
+                  </v-list-tile-content>
+                </template>
+              </v-select>
+            </v-col>
+            <v-col  cols="4">
+              <v-btn
+            variant="flat"
+            color="primary"
+            @click="
+              addDaySite()
+            "
+            >Add Site To Day</v-btn
+          >
+            </v-col>
+
+          </v-row>
+          <v-spacer></v-spacer>
+          <v-row>
+            <v-col>
+              <v-card class="rounded-lg elevation-5">
+                <v-card-title
+                  ><v-row align="center">
+                    <v-col cols="4"
+                      ><v-card-title class="headline">Sites </v-card-title>
+                    </v-col>
+                    <v-col cols="4"
+                      ><v-card-title class="headline">Description </v-card-title>
+                    </v-col>
+                    <v-col class="d-flex justify-end" cols="4">
+                    </v-col>
+                  </v-row>
+                </v-card-title>
+                <v-card-text>
+                  <v-list>
+                    <v-list-item
+                      v-for=" daySite in  daySites"
+                      :key=" daySite.id"
+                    >
+                    <v-row>
+                      <v-col cols="4">
+                      <b>{{  daySite.site.siteName }}
+                        </b>
+                      </v-col>
+                      <v-col cols="4">
+                      <b>{{  daySite.site.siteDescription }}
+                        </b>
+                        </v-col>
+                        <v-col cols="4">
+                          </v-col>
+                        </v-row>
+
+                      <template v-slot:append>
+                        <v-row>
+                          <v-icon
+                            class="mx-2"
+                            size="x-small"
+                            icon="mdi-pencil"
+                            @click="openEditDaySite( daySite)"
+                          ></v-icon>
+                          <v-icon
+                            class="mx-2"
+                            size="x-small"
+                            icon="mdi-trash-can"
+                            @click="deleteDaySite( daySite)"
+                          ></v-icon>
+                        </v-row>
+                      </template>
+                    </v-list-item>
+                  </v-list>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
         </v-card-text>
+        
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
@@ -547,105 +722,54 @@ function formatDate (date) {
         </v-card-actions>
       </v-card>
     </v-dialog>
-
-<!-- Add Hotels Dialog-->
-      <v-dialog persistent v-model="isAddHotel" width="800">
-        <v-card class="rounded-lg elevation-5">
-          <v-card-title class="headline mb-2">Add Hotel</v-card-title>
-          <v-card-text>
-            <v-text-field
-              v-model="newHotel.hotelName"
-              label="Hotel Name"
-              required
-            ></v-text-field>
-            <v-textarea
-              v-model="newHotel.address"
-              label="Address"
-              required
-            ></v-textarea>
-            <v-text-field
-              v-model="newHotel.website"
-              label="Website"
-              required
-            ></v-text-field>
-            <v-text-field
-              v-model="newHotel.hotelImage"
-              label="Image Link"
-              required
-            ></v-text-field>
-            <v-text-field
-              v-model.date="newHotel.checkinDate"
-              label="Checkin Date"
-              type="date"
-              required
-            ></v-text-field>
-            <v-text-field
-              v-model.date="newHotel.checkoutDate"
-              label="Checkout Date"
-              type="date"
-              required
-            ></v-text-field>
-            <v-text-field
-              v-model="newHotel.phoneNumber"
-              label="Phone Number"
-              required
-            ></v-text-field>
-            
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn variant="flat" color="secondary" @click="closeAddHotel()"
-              >Close</v-btn
-            >
-            <v-btn variant="flat" color="primary" @click="addHotel()"
-              >Add Hotel</v-btn
-            >
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-<!-- View Hotels Dialog-->
-      <v-dialog persistent v-model="isViewHotel" width="800">
-        <v-card class="rounded-lg elevation-5">
-          <v-card-title class="headline mb-2">View Hotels</v-card-title>
-          <v-card-text>
-            <v-table>
-              <thead>
-                <tr>
-                  <th>Hotel Name</th>
-                  <th>Address</th>
-                  <th>Website</th>
-                  <th>Image</th>
-                  <th>CheckIn Date</th>
-                  <th>CheckOut Date</th>
-                  <th>Phone Number</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr  v-for="hotel in hotels"
-                  :key="hotel.id"
-                >
-                  <td>{{ hotel.hotelName }}</td>
-                  <td>{{ hotel.address }}</td>
-                  <td>{{ hotel.website }}</td>
-                  <td>{{ hotel.hotelImage }}</td>
-                  <td>{{ hotel.checkinDate }}</td>
-                  <td>{{ hotel.checkoutDate }}</td>
-                  <td>{{ hotel.phoneNumber }}</td>
-                </tr>
-              </tbody>
-            </v-table>
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn variant="flat" color="secondary" @click="closeViewHotel()"
-              >Close</v-btn
-            >
-            <v-btn variant="flat" color="primary" @click="openAddHotel()"
-              >Add Hotel</v-btn
-            >
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
+    <!-- Edit Day Site Dialog -->
+    <v-dialog
+      persistent
+      :model-value="isEditDaySite"
+      width="800"
+    >
+      <v-card class="rounded-lg elevation-5">
+        <v-card-title class="headline mb-2">Update Day Site</v-card-title>
+        <v-card-text>
+          
+          <v-row>
+            <v-col cols="8">
+              <v-select
+                v-model="selectedSite"
+                :items="sites"
+                item-title="siteName"
+                item-value="id"
+                label="Select Site"
+                return-object
+                required
+              >
+                <template slot="item" slot-scope="data">
+                  <v-list-tile-content>
+                    <v-list-tile-title v-html="data.item.siteName"></v-list-tile-title>
+                  </v-list-tile-content>
+                </template>
+              </v-select>
+            </v-col>
+          </v-row>
+        </v-card-text>
+        
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            variant="flat"
+            color="secondary"
+            @click="closeEditDaySite()"
+            >Close</v-btn
+          >
+          <v-btn
+            variant="flat"
+            color="primary"
+            @click="updateDaySite()"
+            >Update Site In Day</v-btn
+          >
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
       <v-snackbar v-model="snackbar.value" rounded="pill">
         {{ snackbar.text }}
