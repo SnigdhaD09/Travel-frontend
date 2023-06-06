@@ -20,12 +20,15 @@ onMounted(async () => {
 function navigateToEdit() {
   router.push({ name: "editTrip", params: { id: props.trip.id } });
 }
+function navigateToView() {
+  router.push({ name: "viewTrip", params: { id: props.trip.id } });
+}
 </script>
 
 <template>
   <v-card
     class="rounded-lg elevation-5 mb-8"
-    @click="showDetails = !showDetails"
+    @click="navigateToView()"
   >
     <v-card-title class="headline">
       <v-row align="center">

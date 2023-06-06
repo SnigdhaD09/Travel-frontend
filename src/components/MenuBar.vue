@@ -16,7 +16,6 @@ var errorText = '';
 onMounted(() => {
   logoURL.value = ocLogo;
   user.value = JSON.parse(localStorage.getItem("user"));
-  console.log(user);
 });
 
 function openUpdateAccount(){
@@ -76,9 +75,6 @@ async function updateAccount() {
       <v-btn class="mx-2" :to="{ name: 'homepage' }"> Home Page </v-btn>
       <v-btn v-if="user === null" class="mx-2" :to="{ name: 'login' }">
         Login
-      </v-btn>
-      <v-btn v-if="user !== null" class="mx-2" :to="{ name: 'ingredients' }">
-        Trips
       </v-btn>
       <v-menu v-if="user !== null" min-width="200px" rounded>
         <template v-slot:activator="{ props }">
