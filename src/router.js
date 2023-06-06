@@ -20,6 +20,12 @@ const router = createRouter({
       component: () => import("./views/EditTrip.vue"),
     },
     {
+      path: "/viewtrip/:id",
+      name: "viewTrip",
+      props: true,
+      component: () => import("./views/ViewTrip.vue"),
+    },
+    {
       path: "/ingredients",
       name: "ingredients",
       component: () => import("./views/IngredientList.vue"),
