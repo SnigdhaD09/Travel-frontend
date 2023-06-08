@@ -45,7 +45,7 @@ function navigateToView() {
         </v-col>
         <v-col class="d-flex justify-end">
           <v-icon
-            v-if="user !== null"
+            v-if="user !== null && user.isAdmin"
             size="small"
             icon="mdi-pencil"
             @click="navigateToEdit()"
