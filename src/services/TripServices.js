@@ -13,6 +13,12 @@ export default {
   addTrip(trip) {
     return apiClient.post("trips", trip);
   },
+  registerForTrip(userId, tripId) {
+    return apiClient.post("trips/register", {userId: userId, tripId: tripId});
+  },
+  unregisterForTrip(userId, tripId) {
+    return apiClient.post("trips/unregister", {userId: userId, tripId: tripId});
+  },
   updateTrip(tripId, trip) {
     return apiClient.put("trips/" + tripId, trip);
   },
