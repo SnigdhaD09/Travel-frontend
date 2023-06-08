@@ -10,6 +10,7 @@ import SiteServices from "../services/SiteServices.js";
 const route = useRoute();
 const router = useRouter();
 const trips = ref([]);
+const registeredTrips = ref([]);
 const hotels = ref([]);
 const sites = ref([]);
 const isAdd = ref(false);
@@ -101,7 +102,24 @@ async function getTrips() {
   if (user.value !== null && user.value.id !== null && user.value.isAdmin === false) {
     await TripServices.getRegisteredTripsByUserId(user.value.id)
       .then((response) => {
-        trips.value = response.data;
+        registeredTrips.value = response.data.map(trip => {return trip.trip;});
+      })
+      .catch((error) => {
+        console.log(error);
+        snackbar.value.value = true;
+        snackbar.value.color = "error";
+        snackbar.value.text = error.response.data.message;
+      });
+      await TripServices.getTrips()
+      .then((response) => {
+        var registered = registeredTrips.value.map(trip => {return trip.id;});
+        for(var i=0; i< response.data.length; i++){
+          if(!registered.includes(response.data[i].id)){
+            trips.value.push(response.data[i]);
+          }
+        }
+        
+        // console.log(trips);
       })
       .catch((error) => {
         console.log(error);
@@ -418,13 +436,28 @@ function truncateDesc(desc){
         </v-col>
       </v-row>
 
+      <v-row v-if="!isAdmin">
+        Registered Trips:
+      </v-row>
+      <v-row>
+      <TripCard
+        v-for="trip in registeredTrips"
+        :key="trip.id"
+        :trip="trip"
+        @deletedList="getLists()"
+      />
+    </v-row>
+      <v-row v-if="!isAdmin">
+        Available Trips:
+      </v-row>
+      <v-row>
       <TripCard
         v-for="trip in trips"
         :key="trip.id"
         :trip="trip"
         @deletedList="getLists()"
       />
-
+    </v-row>
       <v-dialog persistent v-model="isAdd" width="800">
         <v-card class="rounded-lg elevation-5">
           <v-card-title v-if="!isUpdate" class="headline mb-2">Add Trip </v-card-title>

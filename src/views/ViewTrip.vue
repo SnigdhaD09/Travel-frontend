@@ -12,6 +12,8 @@ const router = useRouter();
 const tripDays = ref([]);
 const user = ref(null);
 var isAdmin = ref(false);
+const registered = ref(false);
+const registeredTrips = ref([]);
 const snackbar = ref({
   value: false,
   color: "",
@@ -28,12 +30,31 @@ const trip = ref({
 });
 
 onMounted(async () => {
-  getTrip(route.params.id);
   user.value = JSON.parse(localStorage.getItem("user"));
   isAdmin.value = user.value.isAdmin;
+  getTrip();
+  getRegisteredTrips();
 });
 
-async function getTrip(tripId) {
+async function getRegisteredTrips() {
+   
+  await TripServices.getRegisteredTripsByUserId(user.value.id)
+    .then((response) => {
+      registeredTrips.value = response.data;
+      console.log(registeredTrips);
+      registered.value = false;
+        for(var i=0; i< registeredTrips.value.length; i++){
+            if(route.params.id == registeredTrips.value[i].tripId){
+                registered.value = true;
+            }
+        }
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+}
+async function getTrip() {
+    var tripId = route.params.id;
   await TripServices.getTrip(tripId)
     .then((response) => {
       trip.value = response.data;
@@ -45,6 +66,27 @@ async function getTrip(tripId) {
     .catch((error) => {
       console.log(error);
     });
+}
+async function registerForTrip() {
+
+    var tripId = route.params.id;
+    if(!registered.value){
+        await TripServices.registerForTrip(user.value.id, tripId)
+            .then((response) => {
+                getRegisteredTrips();
+            })
+            .catch((error) => {
+            console.log(error);
+            });
+    }else{
+        await TripServices.unregisterForTrip(user.value.id, tripId)
+            .then((response) => {
+                getRegisteredTrips();
+            })
+            .catch((error) => {
+            console.log(error);
+            });
+    }
 }
 
 async function navigateToEdit() {
@@ -110,6 +152,9 @@ function getAnySearchString(site){
             icon="mdi-pencil"
             @click="navigateToEdit()"
           ></v-icon>
+          <v-btn v-if="!isAdmin" color="accent" @click="registerForTrip()"
+            >{{registered?"Unregister":"Register"}}</v-btn
+          >
         </v-col>
       </v-row>
     </v-card-title>
