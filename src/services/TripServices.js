@@ -19,6 +19,15 @@ export default {
   shareTrip(tripId, email) {
     return apiClient.post("trips/" + tripId + "/share", email);
   },
+  checkFavorite(userId, tripId) {
+    return apiClient.get("trips/favorite/" + userId +"/"+ tripId);
+  },
+  markFavorite(userId, tripId) {
+    return apiClient.post("trips/favorite", {userId: userId, tripId: tripId});
+  },
+  markNotFavorite(userId, tripId) {
+    return apiClient.post("trips/notfavorite", {userId: userId, tripId: tripId});
+  },
   registerForTrip(userId, tripId) {
     return apiClient.post("trips/register", {userId: userId, tripId: tripId});
   },

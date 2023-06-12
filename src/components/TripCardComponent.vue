@@ -10,6 +10,9 @@ const user = ref(null);
 const sharedTrip = ref(0);
 const isShareTrip = ref(false);
 const email = ref("");
+const isFavorite = ref(false);
+const heart = "mdi-heart";
+const heartOutline = "mdi-heart-outline";
 
 const props = defineProps({
   trip: {
@@ -23,6 +26,7 @@ const snackbar = ref({
 });
 onMounted(async () => {
   user.value = JSON.parse(localStorage.getItem("user"));
+  checkFavorite(props.trip.id);
 });
 
 function navigateToEdit() {
@@ -73,6 +77,47 @@ async function shareTrip() {
       snackbar.value.text = error.response.data.message;
     });
 }
+async function checkFavorite(tripId) {
+  await TripServices.checkFavorite(user.value.id, tripId)
+      .then((response) => {
+        isFavorite.value = response.data;
+      })
+      .catch((error) => {
+        console.log(error);
+    });
+}
+
+async function markFavorite(tripId) {
+  if(!isFavorite.value){
+    await TripServices.markFavorite(user.value.id, tripId)
+      .then((response) => {
+        isFavorite.value = true;
+        snackbar.value.value = true;
+        snackbar.value.color = "green";
+        snackbar.value.text = response.data.message;
+      })
+      .catch((error) => {
+        console.log(error);
+        snackbar.value.value = true;
+        snackbar.value.color = "error";
+        snackbar.value.text = error.response.data.message;
+      });
+    } else {
+      await TripServices.markNotFavorite(user.value.id, tripId)
+      .then((response) => {
+        isFavorite.value = false;
+        snackbar.value.value = true;
+        snackbar.value.color = "green";
+        snackbar.value.text = response.data.message;
+      })
+      .catch((error) => {
+        console.log(error);
+        snackbar.value.value = true;
+        snackbar.value.color = "error";
+        snackbar.value.text = error.response.data.message;
+      });  
+    }
+}
 
 function navigateToView() {
   router.push({ name: "viewTrip", params: { id: props.trip.id } });
@@ -103,6 +148,14 @@ function navigateToView() {
             size="small"
             icon="mdi-share"
             @click.stop="openShareTrip(trip.id)"
+          ></v-icon>
+        </v-col>
+        <v-col class="d-flex justify-end">
+          <v-icon
+            v-if="user !== null"
+            size="small"
+            :icon=isFavorite?heart:heartOutline
+            @click.stop="markFavorite(trip.id)"
           ></v-icon>
         </v-col>
         <v-col class="d-flex justify-end">
