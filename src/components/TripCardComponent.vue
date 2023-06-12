@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import TripServices from "../services/TripServices.js";
 
 const router = useRouter();
 
@@ -12,7 +13,11 @@ const props = defineProps({
     required: true,
   },
 });
-
+const snackbar = ref({
+  value: false,
+  color: "",
+  text: "",
+});
 onMounted(async () => {
   user.value = JSON.parse(localStorage.getItem("user"));
 });
@@ -20,6 +25,24 @@ onMounted(async () => {
 function navigateToEdit() {
   router.push({ name: "editTrip", params: { id: props.trip.id } });
 }
+async function copyTrip(tripId) {
+  await TripServices.copyTrip(tripId)
+    .then((response) => {
+      snackbar.value.value = true;
+      snackbar.value.color = "green";
+      snackbar.value.text = response.data.message;
+      setTimeout(() => {
+        router.push({ name: "viewTrip", params: { id: response.data.id } });
+      }, "2000");      
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
+
 function navigateToView() {
   router.push({ name: "viewTrip", params: { id: props.trip.id } });
 }
@@ -47,8 +70,16 @@ function navigateToView() {
           <v-icon
             v-if="user !== null && user.isAdmin"
             size="small"
+            icon="mdi-content-copy"
+            @click.stop="copyTrip(trip.id)"
+          ></v-icon>
+        </v-col>
+        <v-col class="d-flex justify-end">
+          <v-icon
+            v-if="user !== null && user.isAdmin"
+            size="small"
             icon="mdi-pencil"
-            @click="navigateToEdit()"
+            @click.stop="navigateToEdit()"
           ></v-icon>
         </v-col>
       </v-row>
@@ -58,4 +89,17 @@ function navigateToView() {
     </v-card-text>
     
   </v-card>
+  <v-snackbar v-model="snackbar.value" rounded="pill">
+        {{ snackbar.text }}
+
+        <template v-slot:actions>
+          <v-btn
+            :color="snackbar.color"
+            variant="text"
+            @click="closeSnackBar()"
+          >
+            Close
+          </v-btn>
+        </template>
+      </v-snackbar>
 </template>

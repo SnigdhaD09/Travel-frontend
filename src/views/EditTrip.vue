@@ -598,7 +598,7 @@ function formatDate (date) {
               </v-select>
             </v-col>
           </v-row>
-          <v-row>
+          <v-row v-if="isEditDay">
             <v-col cols="8">
               <v-select
                 v-model="selectedSite"
@@ -629,7 +629,7 @@ function formatDate (date) {
 
           </v-row>
           <v-spacer></v-spacer>
-          <v-row>
+          <v-row  v-if="isEditDay">
             <v-col>
               <v-card class="rounded-lg elevation-5">
                 <v-card-title
