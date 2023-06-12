@@ -97,7 +97,6 @@ function closeSnackBar() {
   snackbar.value.value = false;
 }
 function formatDate (date) {
-    console.log(date);
   if (!date) return null;
   date = new Date(date).toISOString().substr(0, 10);
   const [year, month, day] = date.split('-');
