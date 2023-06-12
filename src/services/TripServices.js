@@ -16,6 +16,9 @@ export default {
   copyTrip(tripId) {
     return apiClient.get("trips/" + tripId + "/copy");
   },
+  shareTrip(tripId, email) {
+    return apiClient.post("trips/" + tripId + "/share", email);
+  },
   registerForTrip(userId, tripId) {
     return apiClient.post("trips/register", {userId: userId, tripId: tripId});
   },

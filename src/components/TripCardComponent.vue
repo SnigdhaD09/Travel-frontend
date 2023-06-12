@@ -7,6 +7,9 @@ const router = useRouter();
 
 const showDetails = ref(false);
 const user = ref(null);
+const sharedTrip = ref(0);
+const isShareTrip = ref(false);
+const email = ref("");
 
 const props = defineProps({
   trip: {
@@ -42,6 +45,34 @@ async function copyTrip(tripId) {
       snackbar.value.text = error.response.data.message;
     });
 }
+function openShareTrip(tripId){
+  isShareTrip.value = true;
+  sharedTrip.value = tripId;
+  email.value = "";
+}
+function closeShareTrip(){
+  isShareTrip.value = false;
+  sharedTrip.value = 0;
+  email.value = "";
+}
+async function shareTrip() {
+  var emailObject = {"email": email.value};
+  await TripServices.shareTrip(sharedTrip.value, emailObject)
+    .then((response) => {
+      snackbar.value.value = true;
+      snackbar.value.color = "green";
+      snackbar.value.text = response.data.message;
+      setTimeout(() => {
+        closeShareTrip();
+      }, "2000");
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
 
 function navigateToView() {
   router.push({ name: "viewTrip", params: { id: props.trip.id } });
@@ -68,6 +99,14 @@ function navigateToView() {
         </v-col>
         <v-col class="d-flex justify-end">
           <v-icon
+            v-if="user !== null"
+            size="small"
+            icon="mdi-share"
+            @click.stop="openShareTrip(trip.id)"
+          ></v-icon>
+        </v-col>
+        <v-col class="d-flex justify-end">
+          <v-icon
             v-if="user !== null && user.isAdmin"
             size="small"
             icon="mdi-content-copy"
@@ -89,6 +128,47 @@ function navigateToView() {
     </v-card-text>
     
   </v-card>
+
+  <v-dialog
+      persistent
+      :model-value="isShareTrip"
+      width="800"
+    >
+      <v-card class="rounded-lg elevation-5">
+        <v-card-title class="headline mb-2">Share Trip</v-card-title>
+        <v-card-text>
+          
+          <v-row>
+            <v-col cols="8">
+              <v-text-field
+              v-model="email"
+              type="email"
+              label="Enter an Email"
+              required
+            ></v-text-field>
+            </v-col>
+          </v-row>
+        </v-card-text>
+        
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            variant="flat"
+            color="secondary"
+            @click="closeShareTrip()"
+            >Close</v-btn
+          >
+          <v-btn
+            variant="flat"
+            color="primary"
+            @click="shareTrip()"
+            >Send Trip</v-btn
+          >
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+
   <v-snackbar v-model="snackbar.value" rounded="pill">
         {{ snackbar.text }}
 
