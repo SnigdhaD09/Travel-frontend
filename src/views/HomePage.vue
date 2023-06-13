@@ -54,7 +54,7 @@ var newSite = ref({
 });
 
 onMounted(async () => {
-  console.log(route.params);
+  // console.log(route.params);
   if(route.params.id !== undefined){
     isUpdate.value = true;
     getTrip();
@@ -102,7 +102,11 @@ async function getTrips() {
   if (user.value !== null && user.value.id !== null && user.value.isAdmin === false) {
     await TripServices.getRegisteredTripsByUserId(user.value.id)
       .then((response) => {
-        registeredTrips.value = response.data.map(trip => {return trip.trip;});
+        registeredTrips.value = response.data.map(registration => {
+          if(!registration.trip.isArchived){
+            return registration.trip;
+          }
+        });
       })
       .catch((error) => {
         console.log(error);
@@ -112,9 +116,10 @@ async function getTrips() {
       });
       await TripServices.getTrips()
       .then((response) => {
+        console.log(response);
         var registered = registeredTrips.value.map(trip => {return trip.id;});
         for(var i=0; i< response.data.length; i++){
-          if(!registered.includes(response.data[i].id)){
+          if(!registered.includes(response.data[i].id) && !response.data[i].isArchived){
             trips.value.push(response.data[i]);
           }
         }
